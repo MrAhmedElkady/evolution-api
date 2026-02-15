@@ -2863,11 +2863,16 @@ export class BaileysStartupService extends ChannelStartupService {
           : Buffer.from(mediaMessage.media, 'base64');
       }
 
+      const jid = (mediaMessage as any).number;
+
       const prepareMedia = await prepareWAMessageMedia(
         {
           [type]: mediaInput,
         } as any,
-        { upload: this.client.waUploadToServer },
+        {
+          upload: this.client.waUploadToServer,
+          jid,
+        },
       );
 
       const mediaType = mediaMessage.mediatype + 'Message';
@@ -2965,7 +2970,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return generateWAMessageFromContent(
-        '',
+        jid || '',
         { [mediaType]: { ...prepareMedia[mediaType] } },
         { userJid: this.instance.wuid },
       );
