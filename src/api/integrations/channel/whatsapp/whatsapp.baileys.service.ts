@@ -2835,7 +2835,19 @@ export class BaileysStartupService extends ChannelStartupService {
 
   private async prepareMediaMessage(mediaMessage: MediaMessage) {
     try {
-      const type = mediaMessage.mediatype === 'ptv' ? 'video' : mediaMessage.mediatype;
+      let type = mediaMessage.mediatype === 'ptv' ? 'video' : mediaMessage.mediatype;
+
+      if (!type) {
+         if (mediaMessage.mimetype?.startsWith('video')) {
+            type = 'video';
+         } else if (mediaMessage.mimetype?.startsWith('audio')) {
+            type = 'audio';
+         } else if (mediaMessage.mimetype?.startsWith('document')) {
+             type = 'document';
+         } else {
+            type = 'image';
+         }
+      }
 
       let mediaInput: any;
       if (mediaMessage.mediatype === 'image') {
