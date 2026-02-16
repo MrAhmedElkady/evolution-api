@@ -112,7 +112,8 @@ import makeWASocket, {
   isJidBroadcast,
   isJidGroup,
   isJidNewsletter,
-  isPnUser,
+  isJidGroup,
+  isJidNewsletter,
   jidNormalizedUser,
   makeCacheableSignalKeyStore,
   MessageUpsertType,
@@ -2476,17 +2477,19 @@ export class BaileysStartupService extends ChannelStartupService {
           // group?.participants,
         );
       } else {
-        contextInfo = {
-          mentionedJid: [],
-          groupMentions: [],
-          //expiration: 7776000,
-          ephemeralSettingTimestamp: {
-            low: Math.floor(Date.now() / 1000) - 172800,
-            high: 0,
-            unsigned: false,
-          },
-          disappearingMode: { initiator: 0 },
-        };
+        if (!isJidNewsletter(sender)) {
+          contextInfo = {
+            mentionedJid: [],
+            groupMentions: [],
+            //expiration: 7776000,
+            ephemeralSettingTimestamp: {
+              low: Math.floor(Date.now() / 1000) - 172800,
+              high: 0,
+              unsigned: false,
+            },
+            disappearingMode: { initiator: 0 },
+          };
+        }
         messageSent = await this.sendMessage(
           sender,
           message,
