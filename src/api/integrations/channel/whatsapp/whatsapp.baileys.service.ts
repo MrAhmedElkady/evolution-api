@@ -2873,6 +2873,14 @@ export class BaileysStartupService extends ChannelStartupService {
 
       const jid = (mediaMessage as any).number;
 
+      console.log('DEBUG: prepareMediaMessage input:', {
+        type,
+        mediaInputType: typeof mediaInput,
+        isArrayBuffer: Buffer.isBuffer(mediaInput),
+        jid,
+        keys: Object.keys({ [type]: mediaInput }),
+      });
+
       const prepareMedia = await prepareWAMessageMedia(
         {
           [type]: mediaInput,
