@@ -2288,7 +2288,13 @@ export class BaileysStartupService extends ChannelStartupService {
       );
     }
 
-    if (!message['audio'] && !message['poll'] && !message['sticker'] && sender != 'status@broadcast') {
+    if (
+      !message['audio'] &&
+      !message['poll'] &&
+      !message['sticker'] &&
+      sender != 'status@broadcast' &&
+      !isJidNewsletter(sender)
+    ) {
       return await this.client.sendMessage(
         sender,
         {
