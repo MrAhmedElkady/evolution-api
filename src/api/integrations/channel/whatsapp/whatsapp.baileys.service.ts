@@ -2885,23 +2885,13 @@ export class BaileysStartupService extends ChannelStartupService {
 
       const jid = (mediaMessage as any).number;
 
-      console.log('DEBUG: prepareMediaMessage input:', {
-        type,
-        mediaInputType: typeof mediaInput,
-        isArrayBuffer: Buffer.isBuffer(mediaInput),
-        jid,
-        keys: Object.keys({ [type]: mediaInput }),
-      });
+      const payload: any = {};
+      payload[type] = mediaInput;
 
-      const prepareMedia = await prepareWAMessageMedia(
-        {
-          [type]: mediaInput,
-        } as any,
-        {
-          upload: this.client.waUploadToServer,
-          jid,
-        },
-      );
+      const prepareMedia = await prepareWAMessageMedia(payload, {
+        upload: this.client.waUploadToServer,
+        jid,
+      });
 
       const mediaType = mediaMessage.mediatype + 'Message';
 
