@@ -2838,15 +2838,15 @@ export class BaileysStartupService extends ChannelStartupService {
       let type = mediaMessage.mediatype === 'ptv' ? 'video' : mediaMessage.mediatype;
 
       if (!type) {
-         if (mediaMessage.mimetype?.startsWith('video')) {
-            type = 'video';
-         } else if (mediaMessage.mimetype?.startsWith('audio')) {
-            type = 'audio';
-         } else if (mediaMessage.mimetype?.startsWith('document')) {
-             type = 'document';
-         } else {
-            type = 'image';
-         }
+        if (mediaMessage.mimetype?.startsWith('video')) {
+          type = 'video';
+        } else if (mediaMessage.mimetype?.startsWith('audio')) {
+          type = 'audio';
+        } else if (mediaMessage.mimetype?.startsWith('document')) {
+          type = 'document';
+        } else {
+          type = 'image';
+        }
       }
 
       let mediaInput: any;
