@@ -2833,9 +2833,9 @@ export class BaileysStartupService extends ChannelStartupService {
     return statusSent;
   }
 
-  private async prepareMediaMessage(mediaMessage: MediaMessage) {
+  private async prepareNewsletterMedia(mediaMessage: MediaMessage): Promise<AnyMessageContent> {
     try {
-      let type = mediaMessage.mediatype === 'ptv' ? 'video' : mediaMessage.mediatype;
+      let type: any = mediaMessage.mediatype === 'ptv' ? 'video' : mediaMessage.mediatype;
 
       if (!type) {
         if (mediaMessage.mimetype?.startsWith('video')) {
@@ -2883,15 +2883,73 @@ export class BaileysStartupService extends ChannelStartupService {
           : Buffer.from(mediaMessage.media, 'base64');
       }
 
+      const content: AnyMessageContent = {
+        [type]: mediaInput,
+        caption: mediaMessage.caption,
+        mimetype: mediaMessage.mimetype,
+        fileName: mediaMessage.fileName,
+      } as any;
+
+      if (type === 'video' && mediaMessage.mediatype === 'ptv') {
+        content[type].ptv = true;
+      }
+
+      return content;
+    } catch (error) {
+      this.logger.error(error);
+      throw new InternalServerErrorException(error?.toString() || error);
+    }
+  }
+
+  private async prepareMediaMessage(mediaMessage: MediaMessage) {
+    try {
+      const type = mediaMessage.mediatype === 'ptv' ? 'video' : mediaMessage.mediatype;
+
+      let mediaInput: any;
+      if (mediaMessage.mediatype === 'image') {
+        let imageBuffer: Buffer;
+        if (isURL(mediaMessage.media)) {
+          let config: any = { responseType: 'arraybuffer' };
+
+          if (this.localProxy?.enabled) {
+            config = {
+              ...config,
+              httpsAgent: makeProxyAgent({
+                host: this.localProxy.host,
+                port: this.localProxy.port,
+                protocol: this.localProxy.protocol,
+                username: this.localProxy.username,
+                password: this.localProxy.password,
+              }),
+            };
+          }
+
+          const response = await axios.get(mediaMessage.media, config);
+          imageBuffer = Buffer.from(response.data, 'binary');
+        } else {
+          imageBuffer = Buffer.from(mediaMessage.media, 'base64');
+        }
+
+        mediaInput = await sharp(imageBuffer).jpeg().toBuffer();
+        mediaMessage.fileName ??= 'image.jpg';
+        mediaMessage.mimetype = 'image/jpeg';
+      } else {
+        mediaInput = isURL(mediaMessage.media)
+          ? { url: mediaMessage.media }
+          : Buffer.from(mediaMessage.media, 'base64');
+      }
+
       const jid = (mediaMessage as any).number;
 
-      const payload: any = {};
-      payload[type] = mediaInput;
-
-      const prepareMedia = await prepareWAMessageMedia(payload, {
-        upload: this.client.waUploadToServer,
-        jid,
-      });
+      const prepareMedia = await prepareWAMessageMedia(
+        {
+          [type]: mediaInput,
+        } as any,
+        {
+          upload: this.client.waUploadToServer,
+          jid,
+        },
+      );
 
       const mediaType = mediaMessage.mediatype + 'Message';
 
@@ -3087,6 +3145,22 @@ export class BaileysStartupService extends ChannelStartupService {
     const mediaData: SendMediaDto = { ...data };
 
     if (file) mediaData.media = file.buffer.toString('base64');
+
+    if (isJidNewsletter(data.number)) {
+      const content = await this.prepareNewsletterMedia(mediaData);
+      return await this.sendMessageWithTyping(
+        data.number,
+        content,
+        {
+          delay: data?.delay,
+          presence: 'composing',
+          quoted: data?.quoted,
+          mentionsEveryOne: data?.mentionsEveryOne,
+          mentioned: data?.mentioned,
+        },
+        isIntegration,
+      );
+    }
 
     const generate = await this.prepareMediaMessage(mediaData);
 
